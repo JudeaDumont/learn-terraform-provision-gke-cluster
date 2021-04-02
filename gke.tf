@@ -24,6 +24,8 @@ resource "google_container_cluster" "primary" {
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.subnet.name
 
+
+
   master_auth {
     username = var.gke_username
     password = var.gke_password
@@ -51,13 +53,44 @@ resource "google_container_node_pool" "primary_nodes" {
       env = var.project_id
     }
 
-    # preemptible  = true
+    preemptible  = true
     machine_type = "n1-standard-1"
     tags         = ["gke-node", "${var.project_id}-gke"]
     metadata = {
       disable-legacy-endpoints = "true"
     }
   }
+}
+
+resource "google_project_service" "iam_service" {
+  project = var.project_id
+  service = "iam.googleapis.com"
+
+  disable_dependent_services = true
+}
+
+resource "google_project_service" "container_service" {
+  project = var.project_id
+  service = "container.googleapis.com"
+
+  disable_dependent_services = true
+}
+
+resource "google_project_service" "compute_service" {
+  project = var.project_id
+  service = "compute.googleapis.com"
+
+  disable_dependent_services = true
+}
+
+provider "kubernetes" {
+  version = ">= 1.13.3"
+  # Declaring a static kubectl config path is not ideal for automation, but this keeps from blowing up the local devops engineer's ~/.kube/config. Fix this when we get config
+  # contexts in google_managed_secrets, Vault, or some secret management & audit system.
+  # See: https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs#example-usage
+  # Manual kubeconfig suggestion: https://github.com/hashicorp/terraform-provider-kubernetes/blob/master/_examples/gke/README.md#kubeconfig-for-manual-cli-access
+  config_path    = "~/.kube/config"
+  config_context = "gke_terraform-gke-5_us-central1_terraform-gke-5-gke"
 }
 
 

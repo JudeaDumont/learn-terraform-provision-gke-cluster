@@ -1,2 +1,2 @@
-project_id = "terraform-gke-2"
+project_id = "terraform-gke-5"
 region     = "us-central1"
